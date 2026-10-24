@@ -1,129 +1,68 @@
 ---
-const appName = "Shield";
+const servers = [
+  { name: "Server 1", note: "Standard" },
+  { name: "Server 2", note: "Premium" },
+];
 ---
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#0b1220" />
-    <title>{appName}</title>
-  </head>
-  <body>
-    <main>
-      <h1>🛡️ {appName}</h1>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#a3006b" />
+  <title>Shield</title>
+</head>
+<body>
+  <header>
+    <h1>Shield</h1>
+    <nav><span class="on">HOME</span><span>LOGS</span></nav>
+  </header>
+  <div class="ver">Config Version: 1.0</div>
+  <section class="card">
+    <div class="row"><small>↑ 0 B</small><b>Status: <i id="st">Disconnected</i></b><small>↓ 0 B</small></div>
+    {servers.map((s, i) => (
+      <label class="srv"><input type="radio" name="s" checked={i === 0} />
+        <div>{s.name}<br /><small>{s.note}</small></div></label>
+    ))}
+    <div class="row"><div>Time: <b id="tm">0h:0m:0s</b></div></div>
+  </section>
+  <button id="go">START</button>
 
-      <div class="center">
-        <button id="power" type="button" aria-label="Toggle VPN">
-          <svg viewBox="0 0 24 24" width="64" height="64" fill="none" stroke="currentColor"
-               stroke-width="2" stroke-linecap="round">
-            <path d="M12 2v10" />
-            <path d="M6.3 6.3a8 8 0 1 0 11.4 0" />
-          </svg>
-        </button>
-        <p id="status">Not connected</p>
-        <p id="timer">00:00:00</p>
-      </div>
-
-      <div class="info">
-        <span>Status</span>
-        <strong id="state">Unprotected</strong>
-      </div>
-    </main>
-
-    <script>
-      const power = document.getElementById("power");
-      const statusEl = document.getElementById("status");
-      const stateEl = document.getElementById("state");
-      const timerEl = document.getElementById("timer");
-      let mode = "off"; // off | connecting | on
-      let startedAt = 0;
-      let tick;
-
-      const fmt = (s) =>
-        [s / 3600, (s / 60) % 60, s % 60]
-          .map((n) => String(Math.floor(n)).padStart(2, "0"))
-          .join(":");
-
-      function render() {
-        document.body.dataset.mode = mode;
-        statusEl.textContent =
-          mode === "on" ? "Connected" : mode === "connecting" ? "Connecting..." : "Not connected";
-        stateEl.textContent = mode === "on" ? "Protected" : "Unprotected";
+  <script>
+    const go = document.getElementById("go"), st = document.getElementById("st"), tm = document.getElementById("tm");
+    let on = false, t0 = 0, iv;
+    go.addEventListener("click", async () => {
+      if (!on) {
+        st.textContent = "Connecting...";
+        await new Promise((r) => setTimeout(r, 1200)); // TODO: native VPN start
+        on = true; t0 = Date.now();
+        st.textContent = "Connected"; go.textContent = "STOP";
+        iv = setInterval(() => {
+          const s = Math.floor((Date.now() - t0) / 1000);
+          tm.textContent = `${Math.floor(s / 3600)}h:${Math.floor(s / 60) % 60}m:${s % 60}s`;
+        }, 1000);
+      } else {
+        on = false; clearInterval(iv); // TODO: native VPN stop
+        st.textContent = "Disconnected"; go.textContent = "START"; tm.textContent = "0h:0m:0s";
       }
+    });
+  </script>
 
-      async function startVpn() {
-        // TODO: call native Kotlin VpnService via a Capacitor plugin, e.g.
-        // await Capacitor.Plugins.Shield.start();
-        await new Promise((r) => setTimeout(r, 1200)); // fake delay for now
-      }
-
-      async function stopVpn() {
-        // await Capacitor.Plugins.Shield.stop();
-      }
-
-      power?.addEventListener("click", async () => {
-        if (mode === "connecting") return;
-        if (mode === "off") {
-          mode = "connecting";
-          render();
-          await startVpn();
-          mode = "on";
-          startedAt = Date.now();
-          tick = setInterval(() => {
-            timerEl.textContent = fmt((Date.now() - startedAt) / 1000);
-          }, 1000);
-        } else {
-          await stopVpn();
-          mode = "off";
-          clearInterval(tick);
-          timerEl.textContent = "00:00:00";
-        }
-        render();
-      });
-
-      render();
-    </script>
-
-    <style is:global>
-      * { box-sizing: border-box; margin: 0; }
-      body {
-        min-height: 100vh;
-        font-family: system-ui, -apple-system, sans-serif;
-        background: #0b1220;
-        color: #e8eefc;
-        padding: env(safe-area-inset-top) 20px env(safe-area-inset-bottom);
-        transition: background 0.4s;
-      }
-      body[data-mode="on"] { background: #08190f; }
-      main {
-        min-height: 100vh; max-width: 420px; margin: 0 auto;
-        display: flex; flex-direction: column; justify-content: space-between;
-        padding: 32px 0;
-      }
-      h1 { text-align: center; font-size: 24px; }
-      .center { display: grid; justify-items: center; gap: 16px; }
-      #power {
-        width: 160px; height: 160px; border-radius: 50%;
-        border: 4px solid #2a3a5e; background: #131c31; color: #8fa0c4;
-        display: grid; place-items: center; cursor: pointer;
-        transition: all 0.3s;
-      }
-      #power:active { transform: scale(0.96); }
-      body[data-mode="connecting"] #power {
-        border-color: #f5a524; color: #f5a524; animation: pulse 1s infinite;
-      }
-      body[data-mode="on"] #power {
-        border-color: #30d36b; color: #30d36b; background: #0e2a1a;
-        box-shadow: 0 0 40px rgba(48, 211, 107, 0.35);
-      }
-      #status { font-size: 22px; font-weight: 600; }
-      #timer { color: #8fa0c4; font-variant-numeric: tabular-nums; font-size: 18px; }
-      .info {
-        display: flex; justify-content: space-between;
-        background: #131c31; border-radius: 14px; padding: 16px 20px;
-      }
-      @keyframes pulse { 50% { opacity: 0.5; } }
-    </style>
-  </body>
+  <style is:global>
+    * { box-sizing: border-box; margin: 0; }
+    body { font-family: system-ui, sans-serif; background: #fff; color: #111; min-height: 100vh; }
+    header { background: #a3006b; color: #fff; padding: calc(env(safe-area-inset-top) + 16px) 16px 0; }
+    h1 { text-align: center; font-size: 22px; }
+    nav { display: flex; justify-content: space-around; margin-top: 16px; font-size: 14px; }
+    nav span { padding: 12px 0; opacity: .7; } nav .on { opacity: 1; border-bottom: 3px solid #fff; }
+    .ver { text-align: center; margin: 12px auto; background: #a3006b; color: #fff; width: fit-content; padding: 4px 14px; border-radius: 20px; font-size: 14px; font-weight: 600; }
+    .card { margin: 16px; padding: 16px; border-radius: 20px; background: #fafafa; box-shadow: 0 4px 16px #0002; display: grid; gap: 12px; }
+    .row { display: flex; justify-content: space-between; align-items: center; }
+    #st { color: #7a7ae0; font-style: normal; }
+    .srv { display: flex; gap: 12px; align-items: center; border: 1px solid #a3006b; border-radius: 16px; padding: 16px; }
+    .srv input { accent-color: #a3006b; width: 20px; height: 20px; }
+    #go { display: block; margin: 64px auto; width: 190px; height: 190px; border-radius: 50%; border: 12px solid #ddd; background: #a3006b; color: #fff; font-size: 22px; font-weight: 600; }
+    #go:active { transform: scale(.97); }
+  </style>
+</body>
 </html>
