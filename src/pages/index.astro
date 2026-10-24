@@ -1,7 +1,7 @@
 ---
 const servers = [
-  { name: "Server 1", note: "Standard" },
-  { name: "Server 2", note: "Premium" },
+  { name: "Spectranet only 2", note: "Standard" },
+  { name: "NIGERIA | MTN 1GB 🇳🇬", note: "super premium 🍉" },
 ];
 ---
 <!doctype html>
@@ -10,40 +10,73 @@ const servers = [
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#a3006b" />
-  <title>Shield</title>
+  <title>Litron Shield</title>
 </head>
 <body>
   <header>
-    <h1>Shield</h1>
+    <h1>Litron Shield</h1>
     <nav><span class="on">HOME</span><span>LOGS</span></nav>
   </header>
-  <div class="ver">Config Version: 1.0</div>
+  <div class="ver">Config Version: 31.37 | Network: MTN NG</div>
   <section class="card">
     <div class="row"><small>↑ 0 B</small><b>Status: <i id="st">Disconnected</i></b><small>↓ 0 B</small></div>
+    
     {servers.map((s, i) => (
-      <label class="srv"><input type="radio" name="s" checked={i === 0} />
-        <div>{s.name}<br /><small>{s.note}</small></div></label>
+      <label class="srv">
+        <input type="radio" name="s" checked={i === 0} />
+        <div>{s.name}<br /><small>{s.note}</small></div>
+      </label>
     ))}
-    <div class="row"><div>Time: <b id="tm">0h:0m:0s</b></div></div>
+
+    <div class="row">
+      <div>Time Credit: <b id="tm">0h:0m:0s</b></div>
+      <button id="add-time">Ad Time</button>
+    </div>
   </section>
   <button id="go">START</button>
 
   <script>
     const go = document.getElementById("go"), st = document.getElementById("st"), tm = document.getElementById("tm");
     let on = false, t0 = 0, iv;
+
     go.addEventListener("click", async () => {
       if (!on) {
         st.textContent = "Connecting...";
-        await new Promise((r) => setTimeout(r, 1200)); // TODO: native VPN start
-        on = true; t0 = Date.now();
-        st.textContent = "Connected"; go.textContent = "STOP";
+        
+        // Trigger native Android VPN bridge
+        try {
+          if (window.Capacitor && window.Capacitor.Plugins.ShieldPlugin) {
+            await window.Capacitor.Plugins.ShieldPlugin.startVpn();
+          }
+        } catch (e) {
+          console.error("VPN bridge error:", e);
+        }
+
+        on = true; 
+        t0 = Date.now();
+        st.textContent = "Connected"; 
+        go.textContent = "STOP";
+        
         iv = setInterval(() => {
           const s = Math.floor((Date.now() - t0) / 1000);
           tm.textContent = `${Math.floor(s / 3600)}h:${Math.floor(s / 60) % 60}m:${s % 60}s`;
         }, 1000);
+
       } else {
-        on = false; clearInterval(iv); // TODO: native VPN stop
-        st.textContent = "Disconnected"; go.textContent = "START"; tm.textContent = "0h:0m:0s";
+        // Stop native Android VPN bridge
+        try {
+          if (window.Capacitor && window.Capacitor.Plugins.ShieldPlugin) {
+            await window.Capacitor.Plugins.ShieldPlugin.stopVpn();
+          }
+        } catch (e) {
+          console.error("VPN bridge error:", e);
+        }
+
+        on = false; 
+        clearInterval(iv); 
+        st.textContent = "Disconnected"; 
+        go.textContent = "START"; 
+        tm.textContent = "0h:0m:0s";
       }
     });
   </script>
@@ -51,17 +84,18 @@ const servers = [
   <style is:global>
     * { box-sizing: border-box; margin: 0; }
     body { font-family: system-ui, sans-serif; background: #fff; color: #111; min-height: 100vh; }
-    header { background: #a3006b; color: #fff; padding: calc(env(safe-area-inset-top) + 16px) 16px 0; }
-    h1 { text-align: center; font-size: 22px; }
-    nav { display: flex; justify-content: space-around; margin-top: 16px; font-size: 14px; }
-    nav span { padding: 12px 0; opacity: .7; } nav .on { opacity: 1; border-bottom: 3px solid #fff; }
-    .ver { text-align: center; margin: 12px auto; background: #a3006b; color: #fff; width: fit-content; padding: 4px 14px; border-radius: 20px; font-size: 14px; font-weight: 600; }
-    .card { margin: 16px; padding: 16px; border-radius: 20px; background: #fafafa; box-shadow: 0 4px 16px #0002; display: grid; gap: 12px; }
-    .row { display: flex; justify-content: space-between; align-items: center; }
-    #st { color: #7a7ae0; font-style: normal; }
-    .srv { display: flex; gap: 12px; align-items: center; border: 1px solid #a3006b; border-radius: 16px; padding: 16px; }
+    header { background: #a3006b; color: #fff; padding: calc(env(safe-area-inset-top) + 16px) 16px 16px; }
+    h1 { text-align: center; font-size: 20px; font-weight: 600; }
+    nav { display: flex; justify-content: space-around; margin-top: 12px; font-size: 14px; }
+    nav span { padding: 8px 0; opacity: .7; cursor: pointer; } nav .on { opacity: 1; border-bottom: 3px solid #fff; font-weight: bold; }
+    .ver { text-align: center; margin: 12px auto; background: #a3006b; color: #fff; width: fit-content; padding: 4px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; }
+    .card { margin: 16px; padding: 16px; border-radius: 20px; background: #fafafa; box-shadow: 0 4px 16px #0001; display: grid; gap: 12px; border: 1px solid #eee; }
+    .row { display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+    #st { color: #555; font-style: normal; font-weight: 600; }
+    .srv { display: flex; gap: 12px; align-items: center; border: 1px solid #d81b60; border-radius: 16px; padding: 12px 16px; background: #fff; }
     .srv input { accent-color: #a3006b; width: 20px; height: 20px; }
-    #go { display: block; margin: 64px auto; width: 190px; height: 190px; border-radius: 50%; border: 12px solid #ddd; background: #a3006b; color: #fff; font-size: 22px; font-weight: 600; }
+    #add-time { background: #a3006b; color: #fff; border: none; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; }
+    #go { display: block; margin: 48px auto; width: 170px; height: 170px; border-radius: 50%; border: 10px solid #e0e0e0; background: #a3006b; color: #fff; font-size: 20px; font-weight: bold; box-shadow: 0 8px 20px rgba(163, 0, 107, 0.3); cursor: pointer; }
     #go:active { transform: scale(.97); }
   </style>
 </body>
