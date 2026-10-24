@@ -20,14 +20,6 @@ jobs:
       - name: Generate Android project
         run: npx cap add android
 
-      - name: Inject native code
-        run: |
-          mkdir -p android/app/src/main/java/com/moremore/shield
-          cp -r native/java/com/moremore/shield/*.kt \
-            android/app/src/main/java/com/moremore/shield/
-          cp native/AndroidManifest.xml \
-            android/app/src/main/AndroidManifest.xml
-
       - name: Sync web assets
         run: npx cap sync android
 
