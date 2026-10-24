@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.yourname.shield',
+  appId: 'com.moremore.shield',
   appName: 'Shield',
   webDir: 'dist',
   android: {
